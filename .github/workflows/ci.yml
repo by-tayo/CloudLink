@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate-terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: terraform fmt check
+        run: terraform -chdir=infra fmt -check -recursive
+      - name: terraform init (no backend)
+        run: terraform -chdir=infra init -backend=false
+      - name: terraform validate
+        run: terraform -chdir=infra validate
+
+  lint-downstream-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install -r downstream-api/requirements.txt ruff
+      - name: Lint
+        run: ruff check downstream-api/
+      - name: Validate OpenAPI contract
+        run: |
+          pip install pyyaml
+          python -c "import yaml; yaml.safe_load(open('docs/api-contract.yaml'))"
+      - name: Validate Logic App workflow JSON
+        run: python -c "import json; json.load(open('logic-app/workflow.json'))"

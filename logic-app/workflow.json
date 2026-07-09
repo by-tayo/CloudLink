@@ -1,0 +1,156 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    },  
+    "downstreamApiUrl": {
+      "type": "string",
+      "defaultValue": "https://cloudlink-downstream-j5l0ih.azurewebsites.net/fulfillment"
+    },
+    "serviceBusConnectionName": {
+      "type": "string",
+      "defaultValue": "servicebus"
+    },
+    "dlqQueueName": {
+      "type": "string",
+      "defaultValue": "orders-dlq"
+    }
+  },
+  "triggers": {
+    "When_an_order_is_received": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "method": "POST",
+        "schema": {
+          "type": "object",
+          "required": ["order_id", "sku", "qty"],
+          "properties": {
+            "order_id": { "type": "string" },
+            "sku": { "type": "string" },
+            "qty": { "type": "integer" }
+          }
+        }
+      }
+    }
+  },
+  "actions": {
+    "Generate_correlation_id": {
+      "type": "Compose",
+      "runAfter": {},
+      "inputs": "@guid()"
+    },
+    "Validate_payload": {
+      "type": "If",
+      "runAfter": { "Generate_correlation_id": ["Succeeded"] },
+      "expression": {
+        "and": [
+          { "greater": ["@triggerBody()?['qty']", 0] },
+          { "not": { "equals": ["@triggerBody()?['sku']", ""] } }
+        ]
+      },
+      "actions": {},
+      "else": {
+        "actions": {
+          "Respond_400_invalid_payload": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 400,
+              "body": {
+                "error": "invalid_payload",
+                "correlation_id": "@outputs('Generate_correlation_id')"
+              }
+            }
+          },
+          "Terminate_invalid": {
+            "type": "Terminate",
+            "runAfter": { "Respond_400_invalid_payload": ["Succeeded"] },
+            "inputs": { "runStatus": "Cancelled" }
+          }
+        }
+      }
+    },
+    "Transform_order_payload": {
+      "type": "Compose",
+      "runAfter": { "Validate_payload": ["Succeeded"] },
+      "inputs": {
+        "order_id": "@triggerBody()?['order_id']",
+        "sku": "@triggerBody()?['sku']",
+        "qty": "@triggerBody()?['qty']",
+        "received_at": "@utcNow()"
+      }
+    },
+    
+    "Call_downstream_fulfillment_API": {
+      "type": "Http",
+      "runAfter": { "Transform_order_payload": ["Succeeded"] },
+      "inputs": {
+        "method": "POST",
+        "uri": "@parameters('downstreamApiUrl')",
+        "headers": {
+          "Content-Type": "application/json",
+          "x-correlation-id": "@outputs('Generate_correlation_id')"
+        },
+        "body": "@outputs('Transform_order_payload')",
+        "retryPolicy": {
+          "type": "exponential",
+          "count": 4,
+          "interval": "PT5S",
+          "minimumInterval": "PT5S",
+          "maximumInterval": "PT1M"
+        }
+      },
+      "runtimeConfiguration": {
+        "contentTransfer": { "transferMode": "Chunked" }
+      }
+    },
+    "Respond_success": {
+      "type": "Response",
+      "runAfter": { "Call_downstream_fulfillment_API": ["Succeeded"] },
+      "kind": "Http",
+      "inputs": {
+        "statusCode": 200,
+        "body": {
+          "status": "accepted",
+          "correlation_id": "@outputs('Generate_correlation_id')"
+        }
+      }
+    },
+    "On_downstream_failure_route_to_DLQ": {
+      "type": "ApiConnection",
+      "runAfter": { "Call_downstream_fulfillment_API": ["Failed", "TimedOut"] },
+      "inputs": {
+        "host": {
+          "connection": { "name": "@parameters('$connections')['servicebus']['connectionId']" }
+        },
+        "method": "post",
+        "path": "/@{encodeURIComponent(parameters('dlqQueueName'))}/messages",
+        "body": {
+          "ContentData": "@base64(outputs('Transform_order_payload'))",
+          "Properties": {
+            "correlation_id": "@outputs('Generate_correlation_id')",
+            "failure_reason": "@string(body('Call_downstream_fulfillment_API'))",
+            "original_trigger_time": "@outputs('Transform_order_payload')?['received_at']"
+          }
+        }
+      }
+    },
+    "Respond_502_after_retries_exhausted": {
+      "type": "Response",
+      "runAfter": { "On_downstream_failure_route_to_DLQ": ["Succeeded", "Failed"] },
+      "kind": "Http",
+      "inputs": {
+        "statusCode": 502,
+        "body": {
+          "status": "routed_to_dlq",
+          "correlation_id": "@outputs('Generate_correlation_id')"
+        }
+      }
+    }
+  },
+  "outputs": {}
+}

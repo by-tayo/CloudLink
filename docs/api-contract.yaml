@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: CloudLink Order Intake API
+  version: "1.0.0"
+  description: >
+    Public-facing contract fronted by Azure API Management. Forwards to the
+    CloudLink Logic App, which validates, transforms, and hands the order to
+    the downstream fulfillment system.
+servers:
+  - url: https://cloudlink-apim.azure-api.net
+    description: Production (APIM)
+  - url: http://localhost:8080
+    description: Local downstream API only (bypasses APIM + Logic App)
+
+paths:
+  /orders:
+    post:
+      summary: Submit an order for fulfillment
+      operationId: submitOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRequest"
+      responses:
+        "200":
+          description: Order accepted and fulfilled downstream
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderAccepted"
+        "400":
+          description: Invalid payload (failed Logic App validation)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (APIM throttling policy)
+        "502":
+          description: Downstream fulfillment failed after retries; message routed to orders-dlq
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutedToDlq"
+
+components:
+  schemas:
+    OrderRequest:
+      type: object
+      required: [order_id, sku, qty]
+      properties:
+        order_id:
+          type: string
+          example: ord_123
+        sku:
+          type: string
+          example: WIDGET-1
+        qty:
+          type: integer
+          minimum: 1
+          example: 2
+    OrderAccepted:
+      type: object
+      properties:
+        status:
+          type: string
+          example: accepted
+        correlation_id:
+          type: string
+          format: uuid
+    RoutedToDlq:
+      type: object
+      properties:
+        status:
+          type: string
+          example: routed_to_dlq
+        correlation_id:
+          type: string
+          format: uuid
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: invalid_payload
+        correlation_id:
+          type: string
+          format: uuid
+
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: Ocp-Apim-Subscription-Key
+
+security:
+  - apiKey: []

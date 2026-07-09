@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.env
+.venv/
+wrapped-workflow.json
+workflow-deploy-body.jsondownstream-api/deploy.zip
+infra/workflow-deploy-body.json
