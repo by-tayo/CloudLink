@@ -55,8 +55,8 @@ resource "azurerm_servicebus_queue" "orders" {
   name         = "orders"
   namespace_id = azurerm_servicebus_namespace.this.id
 
-  max_delivery_count                  = 5
-  default_message_ttl                 = "P1D"
+  max_delivery_count                   = 5
+  default_message_ttl                  = "P1D"
   dead_lettering_on_message_expiration = true
 }
 
@@ -144,7 +144,7 @@ resource "azurerm_service_plan" "downstream_api" {
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
   os_type             = "Linux"
-  sku_name            = "F1"  # Free tier — fine for a low-traffic demo
+  sku_name            = "F1" # Free tier — fine for a low-traffic demo
 }
 
 data "azurerm_client_config" "current" {}
