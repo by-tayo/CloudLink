@@ -6,7 +6,7 @@ Built as a portfolio project for enterprise integration / middleware roles (Azur
 
 ## Why this exists
 
-Most "integration demo" projects stop at the happy path. This one is scoped around what actually gets asked about in an integration-support role: what happens when a message fails, how do you know it failed, where does it end up, and how do you find and fix it. Every piece of failure handling has a matching doc in `/docs` — and, unlike a lot of portfolio projects, every piece has actually been run against real Azure resources, not just designed on paper.
+Most "integration demo" projects stop at the happy path. This one is scoped around what actually gets asked about in an integration-support role: what happens when a message fails, how do you know it failed, where does it end up, and how do you find and fix it. Every piece of failure handling has a matching doc in `/docs` and, unlike a lot of portfolio projects, every piece has actually been run against real Azure resources, not just designed on paper.
 
 ## Architecture
 
