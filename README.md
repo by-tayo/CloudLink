@@ -1,6 +1,6 @@
 # CloudLink
 
-A production-grade Azure integration: a Logic App receives inbound order events over HTTP, transforms and validates them, calls a downstream fulfillment API, and — on failure — routes the message to a Service Bus dead-letter queue with an alert. Deployed and verified end-to-end on live Azure infrastructure, both the success path and the failure/DLQ path.
+A production-grade Azure integration: a Logic App receives inbound order events over HTTP, transforms and validates them, calls a downstream fulfillment API, and on failure routes the message to a Service Bus dead-letter queue with an alert. Deployed and verified end-to-end on live Azure infrastructure, both the success path and the failure/DLQ path.
 
 Built as a portfolio project for enterprise integration / middleware roles (Azure Logic Apps, Service Bus, API Management, Azure Monitor).
 
@@ -32,7 +32,7 @@ Logic App (cloudlink-order-intake)
                                          502 routed_to_dlq ──▶ caller
 ```
 
-Live-verified version of this flow — actual Logic Apps designer, actual run history:
+Live-verified version of this flow actual Logic Apps designer, actual run history:
 
 ![Workflow diagram](docs/images/workflow-diagram.png)
 
@@ -51,9 +51,9 @@ cloudlink/
 └── .github/workflows/      CI: validate Terraform + lint the downstream API
 ```
 
-## Deployed and verified — what's actually running
+## Deployed and verified what's actually running
 
-This isn't a "should work" project — every path below has been exercised against real Azure infrastructure and confirmed:
+This isn't a "should work" project every path below has been exercised against real Azure infrastructure and confirmed:
 
 **Happy path:** order submitted → validated → transformed → downstream API called → `200 accepted`.
 
@@ -131,7 +131,7 @@ az webapp deploy \
 
 Then update `downstreamApiUrl` in `logic-app/workflow.json` to point at the real App Service URL and redeploy the workflow.
 
-> Tear down with `terraform destroy` when not actively demoing — everything here runs on free/low-cost tiers, but it's good practice not to leave it running indefinitely.
+> Tear down with `terraform destroy` when not actively demoing everything here runs on free/low-cost tiers, but it's good practice not to leave it running indefinitely.
 
 ## Status
 
