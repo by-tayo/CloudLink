@@ -13,12 +13,11 @@ Env vars:
     SIMULATE_FAILURE_RATE   float 0.0-1.0, probability a request 500s (default 0.0)
     SIMULATE_LATENCY_MS     int, artificial latency per request (default 0)
 """
+import asyncio
 import logging
 import os
 import random
-import time
 import uuid
-from typing import Optional
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -73,12 +72,12 @@ async def health():
 async def fulfill_order(
     payload: OrderPayload,
     request: Request,
-    x_correlation_id: Optional[str] = Header(default=None),
+    x_correlation_id: str | None = Header(default=None),
 ):
     correlation_id = getattr(request.state, "correlation_id", str(uuid.uuid4()))
 
     if LATENCY_MS:
-        time.sleep(LATENCY_MS / 1000)
+        await asyncio.sleep(LATENCY_MS / 1000)
 
     # Idempotency check — Logic App or MQ consumer retries should not double-fulfill
     if payload.order_id in _seen_order_ids:

@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install deps
-        run: pip install -r downstream-api/requirements.txt ruff
+        run: pip install -r downstream-api/requirements.txt ruff==0.16.8
       - name: Lint
         run: ruff check downstream-api/
       - name: Validate OpenAPI contract
