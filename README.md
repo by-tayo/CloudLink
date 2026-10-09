@@ -62,7 +62,7 @@ This isn't a "should work" project every path below has been exercised against r
 ![Confirmed DLQ routing after downstream failure](docs/images/dlq-success-run.png)
 *Actual run history: `Call downstream fulfillment API` failing after retries (56.3s total), `On downstream failure route to DLQ` succeeding, message confirmed present in the queue (`activeMessageCount: 1`).*
 
-## Running it locally (downstream API only — no Azure costs)
+## Running it locally (downstream API only, no Azure costs)
 
 The downstream API is a standalone FastAPI service so you can develop and test the Logic App's contract without touching Azure yet.
 
@@ -135,10 +135,10 @@ Then update `downstreamApiUrl` in `logic-app/workflow.json` to point at the real
 
 ## Status
 
-- [x] Downstream API (fulfillment service) with configurable failure injection — running locally **and** deployed to Azure App Service
-- [x] Logic App workflow (trigger → validate → transform → call → success/error paths) — deployed and live
+- [x] Downstream API (fulfillment service) with configurable failure injection running locally **and** deployed to Azure App Service
+- [x] Logic App workflow (trigger → validate → transform → call → success/error paths) deployed and live
 - [x] Terraform for resource group, Service Bus, Logic App, API Connection, App Service, Monitor alert
-- [x] Service Bus API Connection wired and verified (see debugging notes — this required a real fix)
+- [x] Service Bus API Connection wired and verified (see debugging notes this required a real fix)
 - [x] End-to-end verified: happy path (`200 accepted`) and failure/DLQ path (`502 routed_to_dlq`, message confirmed in queue)
 - [ ] API Management policy (throttling) — see `infra/main.tf` TODO
 - [ ] Correlation-ID propagation into downstream logs / centralized log aggregation
@@ -146,9 +146,9 @@ Then update `downstreamApiUrl` in `logic-app/workflow.json` to point at the real
 
 ## Docs
 
-- [`docs/architecture.md`](docs/architecture.md) — full diagram + component descriptions
-- [`docs/api-contract.yaml`](docs/api-contract.yaml) — OpenAPI spec for the public-facing API
-- [`docs/dependency-catalog.md`](docs/dependency-catalog.md) — every endpoint, queue, and dependency
-- [`docs/alert-catalog.md`](docs/alert-catalog.md) — what alerts exist, how they route, how to resolve them
-- [`docs/runbook-dlq-alert.md`](docs/runbook-dlq-alert.md) — step-by-step incident response for the DLQ alert
-- [`docs/debugging-notes.md`](docs/debugging-notes.md) — real issues hit during deployment (region policy restrictions, Service Bus timing, a missing API connection, and two workflow bugs) and how each was diagnosed and fixed
+- [`docs/architecture.md`](docs/architecture.md) - full diagram + component descriptions
+- [`docs/api-contract.yaml`](docs/api-contract.yaml) - OpenAPI spec for the public-facing API
+- [`docs/dependency-catalog.md`](docs/dependency-catalog.md) - every endpoint, queue, and dependency
+- [`docs/alert-catalog.md`](docs/alert-catalog.md) - what alerts exist, how they route, how to resolve them
+- [`docs/runbook-dlq-alert.md`](docs/runbook-dlq-alert.md) - step-by-step incident response for the DLQ alert
+- [`docs/debugging-notes.md`](docs/debugging-notes.md) - real issues hit during deployment (region policy restrictions, Service Bus timing, a missing API connection, and two workflow bugs) and how each was diagnosed and fixed
