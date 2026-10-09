@@ -1,18 +1,3 @@
-"""
-CloudLink downstream fulfillment API (mock).
-
-Stands in for the "real" backend system the Logic App calls after transforming
-an inbound order. Supports configurable failure injection so you can exercise
-the Logic App's retry policy and Service Bus DLQ routing without needing a
-flaky real dependency.
-
-Run:
-    uvicorn main:app --reload --port 8080
-
-Env vars:
-    SIMULATE_FAILURE_RATE   float 0.0-1.0, probability a request 500s (default 0.0)
-    SIMULATE_LATENCY_MS     int, artificial latency per request (default 0)
-"""
 import asyncio
 import logging
 import os
